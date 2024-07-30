@@ -11,8 +11,16 @@ def part_01(sizes):
     print(n_combos)
 
 
-def part_02(x):
-    pass
+def part_02(sizes):
+    egg_nog = 150
+    n_combos = 0
+    for n_containers in range(len(sizes)):
+        for sz in combinations(sizes, r=n_containers):
+            if sum(sz) == egg_nog:
+                n_combos += 1
+        if n_combos != 0:
+            break
+    print(n_combos)
 
 
 if __name__ == "__main__":
@@ -20,4 +28,4 @@ if __name__ == "__main__":
         container_sizes = list(map(int, f.readlines()))
 
     part_01(sorted(container_sizes, reverse=True))
-    # print(part_02(container_sizes))
+    part_02(sorted(container_sizes, reverse=True))

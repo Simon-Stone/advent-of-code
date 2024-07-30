@@ -68,9 +68,13 @@ class RealSue:
             if field.name in ["cats", "trees"]:
                 if a <= b:
                     return False
+                else:
+                    continue
             if field.name in ["pomeranians", "goldfish"]:
                 if a >= b:
                     return False
+                else:
+                    continue
             if a != b:
                 return False
         return True

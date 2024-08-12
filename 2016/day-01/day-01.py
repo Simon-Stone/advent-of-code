@@ -38,16 +38,19 @@ def part_02(x):
                 current_heading_idx = len(headings) + current_heading_idx
 
         if headings[current_heading_idx] == "N":
-            pos[0] += n
+            steps = [(pos[0] + x, pos[1]) for x in range(1, n + 1)]
         elif headings[current_heading_idx] == "S":
-            pos[0] -= n
+            steps = [(pos[0] - x, pos[1]) for x in range(1, n + 1)]
         elif headings[current_heading_idx] == "E":
-            pos[1] += n
+            steps = [(pos[0], pos[1] + x) for x in range(1, n + 1)]
         elif headings[current_heading_idx] == "W":
-            pos[1] -= n
-        if tuple(pos) in history:
-            return sum(pos)
-        history.add(tuple(pos))
+            steps = [(pos[0], pos[1] - x) for x in range(1, n + 1)]
+        pos = steps[-1]
+        for step in steps:
+            if step in history:
+                return sum(step)
+        history.update(steps)
+
     return None
 
 
@@ -56,4 +59,4 @@ if __name__ == "__main__":
         instructions = f.read().strip().split(",")
 
     print(part_01(instructions))
-    print(part_02(["R8", "R4", "R4", "R8"]))
+    print(part_02(instructions))

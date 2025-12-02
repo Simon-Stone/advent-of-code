@@ -1,7 +1,5 @@
 import re
 
-from cyk import Parser
-
 
 def create_mapping(m, inverse=False):
     mapping = dict()
@@ -35,15 +33,17 @@ def part_01(x):
     return len(unique_molecules)
 
 
-def cyk_algorithm(I: str, grammar: dict):
-    grammar_string = "\n".join([f"{key} -> {value}" for key, value in grammar.items()])
-    parser = Parser(grammar_string, I)
-    print(parser.parse())
-
-
 def part_02(x):
     mapping, molecule = parse_input(x, inverse=True)
-    cyk_algorithm(molecule, mapping)
+    n_terminals = len(re.findall(pattern=r"Rn|Ar", string=molecule))
+    n_commas = len(re.findall(pattern="Y", string=molecule))
+    n_elements = len(
+        re.findall(
+            pattern=r"[A-Z]",
+            string=molecule,
+        )
+    )
+    return n_elements - n_terminals - 2 * n_commas - 1
 
 
 if __name__ == "__main__":

@@ -1,99 +1,73 @@
-from copy import deepcopy
-from dataclasses import dataclass, field
+from os import replace
 
 
-START = "S"
-BEAM = "|"
+START = 1
+BEAM = 1
 SPLITTER = "^"
-EMPTY = "."
+EMPTY = 0
+
+MAPPING = {".": EMPTY, "|": BEAM, "S": START, "^": SPLITTER}
 
 
-def parse_manifold(manifold_string: list[str]) -> list[list[str]]:
-    manifold: list[list[str]] = []
+def parse_manifold(manifold_string: list[str]) -> list[list[str | int]]:
+    manifold: list[list[str | int]] = []
     for row in manifold_string:
         manifold.append([])
         for c in row.strip():
-            manifold[-1].append(c)
+            manifold[-1].append(MAPPING[c])
     return manifold
 
 
-def print_manifold(manifold: list[list[str]]):
-    print("-" * len(manifold[0]))
+def format_manifold(manifold: list[list[str | int]], replace_counts=True) -> str:
+    def replace_count(x: int | str) -> str:
+        if isinstance(x, str):
+            return x
+        return "|" if x > 0 else "."
+
+    lines: list[str] = []
     for row in manifold:
-        print("".join(row))
-    print("-" * len(manifold[0]))
+        if replace_counts:
+            row = [replace_count(c) for c in row]
+        lines.append("".join(map(str, row)))
+    return "\n".join(lines)
 
 
-def trace_beam(manifold: list[list[str]]) -> list[list[str]]:
+def trace_beam(manifold: list[list[str | int]]) -> list[list[str | int]]:
     for r, row in enumerate(manifold[1:], start=1):
         for c, col in enumerate(row):
-            if manifold[r - 1][c] not in [START, BEAM]:
+            if manifold[r - 1][c] in [EMPTY, SPLITTER]:
                 continue
             if col == SPLITTER:
-                if manifold[r][c - 1] == EMPTY:
-                    manifold[r][c - 1] = BEAM
-                if manifold[r][c + 1] == EMPTY:
-                    manifold[r][c + 1] = BEAM
+                if not manifold[r][c - 1] == SPLITTER:
+                    manifold[r][c - 1] += manifold[r - 1][c]
+                if not manifold[r][c + 1] == SPLITTER:
+                    manifold[r][c + 1] += manifold[r - 1][c] + manifold[r - 1][c + 1]
             elif col == EMPTY:
-                if manifold[r - 1][c] in [START, BEAM]:
-                    manifold[r][c] = BEAM
-
+                manifold[r][c] += manifold[r - 1][c]
     return manifold
 
 
-@dataclass
-class State:
-    pos: tuple[int, int]
-    manifold: list[list[str]]
-
-
-def count_timelines(manifold: list[list[str]]) -> int:
-    starting_point = (1, manifold[0].index(START))
-    unexplored: list[State] = [State(pos=starting_point, manifold=deepcopy(manifold))]
-    n_timelines = 0
-    while unexplored:
-        state = unexplored.pop()
-        manifold = state.manifold
-        starting_row, starting_col = state.pos
-        n_timelines += 1
-        for r, row in enumerate(manifold[starting_row:], start=starting_row):
-            for c, col in enumerate(row):
-                if manifold[r - 1][c] not in [START, BEAM]:
-                    continue
-                if col == SPLITTER:
-                    if manifold[r][c + 1] == EMPTY:
-                        alternate_manifold = deepcopy(manifold)
-                        alternate_manifold[r][c + 1] = BEAM
-                        unexplored.append(
-                            State(pos=(r + 1, c + 1), manifold=alternate_manifold)
-                        )
-                    if manifold[r][c - 1] == EMPTY:
-                        manifold[r][c - 1] = BEAM
-
-                elif col == EMPTY:
-                    manifold[r][c] = BEAM
-                    break
-        print_manifold(manifold)
-
-    return n_timelines
-
-
-def count_splits(manifold: list[list[str]]) -> int:
+def count_splits(manifold: list[list[str | int]]) -> int:
     n_splits = 0
     for r, row in enumerate(manifold[1:], start=1):
         for c, col in enumerate(row):
             if col == SPLITTER:
-                if manifold[r - 1][c] == BEAM:
+                if isinstance(manifold[r - 1][c], int) and manifold[r - 1][c] > 0:
                     n_splits += 1
     return n_splits
 
 
+def count_timelines(traced_manifold: list[list[str | int]]) -> int:
+    return sum(traced_manifold[-1])
+
+
 if __name__ == "__main__":
-    with open("2025/day-07/test.txt") as f:
+    with open("2025/day-07/input.txt") as f:
         manifold = parse_manifold(f.readlines())
 
-    starting_manifold = deepcopy(manifold)
-    print("Part 1:", count_splits(trace_beam(manifold)))
-    print_manifold(manifold)
-    manifold = deepcopy(starting_manifold)
-    print("Part 2:", count_timelines(manifold))
+    traced_manifold = trace_beam(manifold)
+    print("Part 1:", count_splits(traced_manifold))
+    print(format_manifold(manifold))
+    print("Part 2:", count_timelines(traced_manifold))
+    with open("out.txt", "w") as f:
+        print(format_manifold(manifold), file=f)
